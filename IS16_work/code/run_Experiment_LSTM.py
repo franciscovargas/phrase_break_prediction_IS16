@@ -2,10 +2,14 @@
 
 """Script to train phrase break prediction using uni-directional LSTM RNN"""
 
+# python run_Experiment_LSTM.py --data_dir ../data/PAP --lstm_layer_dim 256 --l_rate 0.01 --momentum 0.01 --num_epochs 1 --model_dir ../model --embedding_dims 100
+
+
+
 # python imports
 import os, codecs, argparse
 from data_load import process_data
-
+from phrase_breakers import LSTMBreaker
 # numpy imports
 import numpy as np
 
@@ -104,11 +108,12 @@ def run_experiment():
     print("Compiling the model")
     model.compile(loss = 'categorical_crossentropy', optimizer = 'sgd', metrics = ['accuracy'])
 
-    ########## RNN TRAINING AND EVALUATION ##########
-    print("Training the model")
-    checkpointer = ModelCheckpoint(filepath = os.path.join(model_dir, "LSTM_weights.hdf5"), monitor = 'val_loss', verbose = 1, save_best_only = True, mode = 'auto')
-    earlystopping = EarlyStopping(monitor = 'val_loss', patience = 10, verbose = 1, mode = 'auto')
-    history = model.fit_generator(batch_generator(text_train, labels_train), samples_per_epoch = len(text_train), nb_epoch = num_epochs, show_accuracy = True, callbacks = [checkpointer, earlystopping], validation_data = batch_generator(text_valid, labels_valid), nb_val_samples = len(text_valid), nb_worker = 1)
+    # ########## RNN TRAINING AND EVALUATION ##########
+    # print("Training the model")
+    # print(map(len,text_train))
+    # checkpointer = ModelCheckpoint(filepath = os.path.join(model_dir, "LSTM_weights2.hdf5"), monitor = 'val_loss', verbose = 1, save_best_only = True, mode = 'auto')
+    # earlystopping = EarlyStopping(monitor = 'val_loss', patience = 10, verbose = 1, mode = 'auto')
+    # history = model.fit_generator(batch_generator(text_train, labels_train), samples_per_epoch = len(text_train), nb_epoch = num_epochs, show_accuracy = True, callbacks = [checkpointer, earlystopping], validation_data = batch_generator(text_valid, labels_valid), nb_val_samples = len(text_valid), nb_worker = 1)
 
     print("Print loading best model weights")
     model.load_weights(os.path.join(model_dir, "LSTM_weights.hdf5"))
@@ -117,13 +122,22 @@ def run_experiment():
     f1 = []
     for test_sentence, ground_truth in zip(text_test, labels_test):
         x = np.array(test_sentence)
+        # print(x)
         x = x.reshape(1, -1)
         predicted_labels = model.predict_classes(x)
+        print(all(list(predicted_labels.reshape(-1)))) #,"\n" ,ground_truth)
         true_labels = np.array(ground_truth)
         true_labels = true_labels.reshape(1, -1)
         sentence_f1 = f1_score(true_labels, predicted_labels, pos_label = None, average = 'micro')
         f1.append(sentence_f1)
     print("Mean F1 score over test sentences : %f" %(np.mean(f1)))
+
+    example = ("State media said Hwasong-12 rockets would pass over Japan and land in the sea about 30km (17 miles) from Guam, if the plan was approved by Kim Jong-un."
+           + "It denounced Donald Trump's warnings of \"fire and fury\" and said the US leader was \"bereft of reason\".")
+
+    exp_vec = np.asarray(LSTMBreaker.proc_text(example, word2index))
+    prediction = model.predict(exp_vec.reshape(1,-1))
+    print(prediction)
 
 if __name__ == "__main__":
     run_experiment()
