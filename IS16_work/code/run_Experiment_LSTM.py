@@ -2,7 +2,7 @@
 
 """Script to train phrase break prediction using uni-directional LSTM RNN"""
 
-# python run_Experiment_LSTM.py --data_dir ../data/PAP --lstm_layer_dim 256 --l_rate 0.01 --momentum 0.01 --num_epochs 1 --model_dir ../model --embedding_dims 100
+# python run_Experiment_LSTM.py --data_dir ../data/PAP --lstm_layer_dim 128 --l_rate 0.01 --momentum 0.01 --num_epochs 1 --model_dir ../model --embedding_dims 100
 
 
 
